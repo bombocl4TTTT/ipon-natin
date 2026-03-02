@@ -111,21 +111,7 @@
     margin-top: 6px;
   }
 
-  /* Progress */
-  .progress-outer {
-    margin-top: 18px;
-    height: 3px;
-    background: rgba(196, 149, 106, 0.2);
-    border-radius: 100px;
-    overflow: hidden;
-  }
 
-  .progress-inner {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 100px;
-    transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  }
 
   /* Person pills */
   .pills {
@@ -314,15 +300,105 @@
   }
 
   .you-link:hover { color: var(--text); }
+
+  /* Delete button */
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    transition: color 0.2s;
+  }
+
+  .delete-btn:hover { color: var(--text); }
+
+  /* Amount input */
+  .amount-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .amount-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.85rem;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .amount-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* Milestone celebration */
+  .milestone-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .milestone-box {
+    background: var(--surface);
+    padding: 40px 30px;
+    border-radius: 20px;
+    text-align: center;
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .milestone-emoji {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+
+  .milestone-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .milestone-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { opacity: 1; }
+    70% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
 </style>
 </head>
 <body>
 
 <div class="fade">
   <div class="header">
-    <div class="header-eyebrow">Ipon Tracker · GF's Page</div>
+    <div class="header-eyebrow">Ipon Tracker · Bebe's Page</div>
     <div class="header-title">Our little<br><em>savings.</em></div>
-    <span class="header-switch" onclick="window.location='you.html'">Switch to your page →</span>
+    <span class="header-switch" onclick="window.location='you.html'">Switch to Red's page →</span>
   </div>
 </div>
 
@@ -330,22 +406,18 @@
   <div class="total-card">
     <div class="total-eyebrow">Combined Total</div>
     <div class="total-amount" id="total">₱0</div>
-    <div class="total-sub" id="goal-text">₱0 of ₱5,000 goal</div>
-    <div class="progress-outer">
-      <div class="progress-inner" id="progress" style="width:0%"></div>
-    </div>
   </div>
 </div>
 
 <div class="fade">
   <div class="pills">
     <div class="pill">
-      <div class="pill-label">Me 🌸</div>
+      <div class="pill-label">Bebe 🌸</div>
       <div class="pill-amt" id="gf-amt">₱0</div>
       <div class="pill-streak" id="gf-streak">0 day streak</div>
     </div>
     <div class="pill">
-      <div class="pill-label">Him 🧑</div>
+      <div class="pill-label">Red 🧑</div>
       <div class="pill-amt" id="you-amt">₱0</div>
       <div class="pill-streak" id="you-streak">0 day streak</div>
     </div>
@@ -353,9 +425,12 @@
 </div>
 
 <div class="fade">
-  <button class="btn-primary" onclick="deposit('gf')">
-    ✦ My ₱20 Deposit
-  </button>
+  <div class="amount-input-row">
+    <input type="number" class="amount-input" id="deposit-amt" placeholder="Amount" value="20" min="1">
+    <button class="btn-primary" onclick="deposit('gf')" style="width: auto;">
+      ✦ Save
+    </button>
+  </div>
 </div>
 
 <div class="fade" style="margin-top: 32px;">
@@ -366,25 +441,64 @@
   <div class="log" id="log"></div>
 </div>
 
-<a class="you-link" href="you.html">Go to his page ↗</a>
+<a class="you-link" href="you.html">Go to Red's page ↗</a>
 
 <div class="toast" id="toast"></div>
 
 <script>
-  const GOAL = 5000;
   const SUPABASE_URL = 'https://smgcsfzhdkiekvymicbi.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_b0wrq_pp4_lf-eM0r1XQUA_u5_HVjbt'; 
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
 
   async function deposit(who) {
     try {
-      await db.from('deposits').insert({ person: who, amount: 20 });
+      const amt = parseInt(document.getElementById('deposit-amt').value) || 20;
+      await db.from('deposits').insert({ person: who, amount: amt });
+      document.getElementById('deposit-amt').value = '20';
       await loadAndRender();
-      showToast(who === 'gf' ? '₱20 saved ✦' : '₱20 saved for him ♡');
+      showToast(who === 'gf' ? `₱${amt} saved ✦` : `₱${amt} saved for Red ♡`);
     } catch (err) {
       console.error('Deposit failed:', err);
       showToast('Error saving deposit. Try again.');
     }
+  }
+
+  async function deleteDeposit(id) {
+    if (!confirm('Sure ka e-delete mo???')) return;
+    try {
+      await db.from('deposits').delete().eq('id', id);
+      await loadAndRender();
+      showToast('Entry deleted.');
+    } catch (err) {
+      console.error('Delete failed:', err);
+      showToast('Error deleting entry.');
+    }
+  }
+
+  let lastMilestone = 0;
+  function checkMilestone(total) {
+    const milestones = [250, 500, 750, 1000, 2000, 3000, 5000, 7000, 8000, 10000];
+    for (let m of milestones) {
+      if (total >= m && lastMilestone < m) {
+        lastMilestone = m;
+        showMilestone(m);
+        return;
+      }
+    }
+  }
+
+  function showMilestone(amount) {
+    const overlay = document.createElement('div');
+    overlay.className = 'milestone-overlay';
+    overlay.innerHTML = `
+      <div class="milestone-box">
+        <div class="milestone-emoji">🎉</div>
+        <div class="milestone-text">₱${amount.toLocaleString()}!</div>
+        <div class="milestone-sub">Milestone reached — Keep it up!</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.remove(), 3000);
   }
 
   async function loadAndRender() {
@@ -424,11 +538,8 @@
 
   function render(state) {
     const total = state.you.total + state.gf.total;
-    const pct = Math.min((total / GOAL) * 100, 100);
 
     document.getElementById('total').textContent = '₱' + total.toLocaleString();
-    document.getElementById('goal-text').textContent = `₱${total.toLocaleString()} of ₱${GOAL.toLocaleString()} goal`;
-    document.getElementById('progress').style.width = pct + '%';
 
     document.getElementById('gf-amt').textContent = '₱' + state.gf.total.toLocaleString();
     document.getElementById('you-amt').textContent = '₱' + state.you.total.toLocaleString();
@@ -437,20 +548,26 @@
 
     document.getElementById('count').textContent = state.history.length + ' entries';
 
+    checkMilestone(total);
+
     const log = document.getElementById('log');
     if (!state.history.length) {
       log.innerHTML = '<div class="empty-log">No entries yet — start saving together.</div>';
       return;
     }
 
-    log.innerHTML = state.history.map(h => `
-      <div class="log-item">
-        <div class="log-dot ${h.who === 'gf' ? 'me' : ''}"></div>
-        <div class="log-who">${h.who === 'gf' ? 'Me' : 'Him'}</div>
-        <div class="log-time">${h.time}</div>
-        <div class="log-amt">+₱20</div>
-      </div>
-    `).join('');
+    log.innerHTML = state.history.map(h => {
+      const date = new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="log-item">
+          <div class="log-dot ${h.person === 'gf' ? 'me' : ''}"></div>
+          <div class="log-who">${h.person === 'gf' ? 'Bebe' : 'Red'}</div>
+          <div class="log-time">${date}</div>
+          <div class="log-amt">+₱${h.amount}</div>
+          <button class="delete-btn" onclick="deleteDeposit(${h.id})">✕</button>
+        </div>
+      `;
+    }).join('');
   }
 
   function showToast(msg) {
