@@ -575,7 +575,13 @@
   async function deleteDeposit(id) {
     if (!confirm('Sure ka e-delete mo???')) return;
     try {
-      await db.from('deposits').delete().eq('id', id);
+      const { error } = await db.from('deposits').delete().eq('id', id);
+      if (error) {
+        console.error('Delete error:', error);
+        showToast('Error deleting entry. Check console.');
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 300));
       await loadAndRender();
       showToast('Entry deleted.');
     } catch (err) {
