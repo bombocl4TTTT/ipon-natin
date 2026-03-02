@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ipon — GF</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8f5;
+    --surface: #ffffff;
+    --border: #ece8e1;
+    --text: #2c2825;
+    --muted: #b0a898;
+    --soft: #f0ece5;
+    --accent: #c4956a;
+    --accent-light: #f5ede3;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 48px 28px 60px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .fade { opacity: 0; transform: translateY(10px); animation: up 0.55s ease forwards; }
+  .fade:nth-child(1) { animation-delay: 0.05s; }
+  .fade:nth-child(2) { animation-delay: 0.13s; }
+  .fade:nth-child(3) { animation-delay: 0.21s; }
+  .fade:nth-child(4) { animation-delay: 0.29s; }
+  .fade:nth-child(5) { animation-delay: 0.37s; }
+
+  @keyframes up { to { opacity: 1; transform: translateY(0); } }
+
+  /* Header */
+  .header { margin-bottom: 44px; }
+
+  .header-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .header-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 2.6rem;
+    line-height: 1.15;
+    color: var(--text);
+  }
+
+  .header-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .header-switch {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+    transition: color 0.2s;
+  }
+
+  .header-switch:hover { color: var(--accent); }
+
+  /* Total */
+  .total-card {
+    background: var(--accent-light);
+    border-radius: 24px;
+    padding: 28px 24px 22px;
+    margin-bottom: 16px;
+  }
+
+  .total-eyebrow {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+    opacity: 0.8;
+  }
+
+  .total-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.4rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .total-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* Progress */
+  .progress-outer {
+    margin-top: 18px;
+    height: 3px;
+    background: rgba(196, 149, 106, 0.2);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .progress-inner {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 100px;
+    transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Person pills */
+  .pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px 18px;
+  }
+
+  .pill-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .pill-amt {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .pill-streak {
+    font-size: 0.67rem;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 100px;
+    padding: 17px 24px;
+    font-family: 'Lato', sans-serif;
+    font-weight: 400;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-primary:active { transform: scale(0.98); opacity: 0.88; }
+
+  .btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 16px 24px;
+    font-family: 'Lato', sans-serif;
+    font-weight: 300;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-secondary:active { opacity: 0.7; }
+
+  /* History */
+  .section-head {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .log {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .log-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 13px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: up 0.3s ease forwards;
+  }
+
+  .log-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--accent);
+    opacity: 0.4;
+  }
+
+  .log-dot.me { opacity: 1; }
+
+  .log-who {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--text);
+    width: 38px;
+  }
+
+  .log-time {
+    font-size: 0.75rem;
+    color: var(--muted);
+    flex: 1;
+  }
+
+  .log-amt {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .empty-log {
+    text-align: center;
+    padding: 28px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-style: italic;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--text);
+    color: var(--bg);
+    font-family: 'Lato', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    padding: 11px 22px;
+    border-radius: 100px;
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    z-index: 999;
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .you-link {
+    display: block;
+    text-align: center;
+    margin-top: 36px;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .you-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="fade">
+  <div class="header">
+    <div class="header-eyebrow">Ipon Tracker · GF's Page</div>
+    <div class="header-title">Our little<br><em>savings.</em></div>
+    <span class="header-switch" onclick="window.location='you.html'">Switch to your page →</span>
+  </div>
+</div>
+
+<div class="fade">
+  <div class="total-card">
+    <div class="total-eyebrow">Combined Total</div>
+    <div class="total-amount" id="total">₱0</div>
+    <div class="total-sub" id="goal-text">₱0 of ₱5,000 goal</div>
+    <div class="progress-outer">
+      <div class="progress-inner" id="progress" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="fade">
+  <div class="pills">
+    <div class="pill">
+      <div class="pill-label">Me 🌸</div>
+      <div class="pill-amt" id="gf-amt">₱0</div>
+      <div class="pill-streak" id="gf-streak">0 day streak</div>
+    </div>
+    <div class="pill">
+      <div class="pill-label">Him 🧑</div>
+      <div class="pill-amt" id="you-amt">₱0</div>
+      <div class="pill-streak" id="you-streak">0 day streak</div>
+    </div>
+  </div>
+</div>
+
+<div class="fade">
+  <button class="btn-primary" onclick="deposit('gf')">
+    ✦ My ₱20 Deposit
+  </button>
+</div>
+
+<div class="fade" style="margin-top: 32px;">
+  <div class="section-head">
+    <span>Log</span>
+    <span id="count">0 entries</span>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+
+<a class="you-link" href="you.html">Go to his page ↗</a>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const GOAL = 5000;
+  const SUPABASE_URL = 'smgcsfzhdkiekvymicbi'; 
+  const SUPABASE_KEY = 'sb_publishable_b0wrq_pp4_lf-eM0r1XQUA_u5_HVjbt'; 
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
+
+  async function deposit(who) {
+    try {
+      await db.from('deposits').insert({ person: who, amount: 20 });
+      await loadAndRender();
+      showToast(who === 'gf' ? '₱20 saved ✦' : '₱20 saved for him ♡');
+    } catch (err) {
+      console.error('Deposit failed:', err);
+      showToast('Error saving deposit. Try again.');
+    }
+  }
+
+  async function loadAndRender() {
+    try {
+      const { data, error } = await db.from('deposits').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      
+      const you = data.filter(d => d.person === 'you');
+      const gf = data.filter(d => d.person === 'gf');
+      const state = {
+        you: { total: you.reduce((s, d) => s + d.amount, 0), streak: calculateStreak(you) },
+        gf: { total: gf.reduce((s, d) => s + d.amount, 0), streak: calculateStreak(gf) },
+        history: data.slice(0, 30)
+      };
+      render(state);
+    } catch (err) {
+      console.error('Load failed:', err);
+      render({ you: { total: 0, streak: 0 }, gf: { total: 0, streak: 0 }, history: [] });
+    }
+  }
+
+  function calculateStreak(rows) {
+    if (!rows.length) return 0;
+    let count = 1, prev = new Date(rows[0].created_at).toDateString();
+    for (let i = 1; i < rows.length; i++) {
+      const d = new Date(rows[i].created_at);
+      d.setDate(d.getDate() + 1);
+      if (d.toDateString() === prev) {
+        count++;
+        prev = new Date(rows[i].created_at).toDateString();
+      } else break;
+    }
+    return count;
+  }
+
+  loadAndRender();
+
+  function render(state) {
+    const total = state.you.total + state.gf.total;
+    const pct = Math.min((total / GOAL) * 100, 100);
+
+    document.getElementById('total').textContent = '₱' + total.toLocaleString();
+    document.getElementById('goal-text').textContent = `₱${total.toLocaleString()} of ₱${GOAL.toLocaleString()} goal`;
+    document.getElementById('progress').style.width = pct + '%';
+
+    document.getElementById('gf-amt').textContent = '₱' + state.gf.total.toLocaleString();
+    document.getElementById('you-amt').textContent = '₱' + state.you.total.toLocaleString();
+    document.getElementById('gf-streak').textContent = state.gf.streak + ' day streak';
+    document.getElementById('you-streak').textContent = state.you.streak + ' day streak';
+
+    document.getElementById('count').textContent = state.history.length + ' entries';
+
+    const log = document.getElementById('log');
+    if (!state.history.length) {
+      log.innerHTML = '<div class="empty-log">No entries yet — start saving together.</div>';
+      return;
+    }
+
+    log.innerHTML = state.history.map(h => `
+      <div class="log-item">
+        <div class="log-dot ${h.who === 'gf' ? 'me' : ''}"></div>
+        <div class="log-who">${h.who === 'gf' ? 'Me' : 'Him'}</div>
+        <div class="log-time">${h.time}</div>
+        <div class="log-amt">+₱20</div>
+      </div>
+    `).join('');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+</script>
+</body>
+</html>
