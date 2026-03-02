@@ -696,7 +696,7 @@
         e.preventDefault();
         e.stopPropagation();
         const id = e.target.getAttribute('data-id');
-        if (id) deleteDeposit(parseInt(id));
+        if (id) deleteDeposit(id);
       }
     });
   }

@@ -481,7 +481,7 @@
 <div class="fade">
   <div class="header">
     <div class="header-eyebrow">Ipon Tracker · Bebe's Page</div>
-    <div class="header-title">Our little<br><em>savings.</em></div>
+    <div class="header-title">Our Gamay<br><em>nga savings.</em></div>
     <span class="header-switch" onclick="window.location='you.html'">Switch to Red's page →</span>
     <button class="header-icon" onclick="toggleAnalytics()"><img src="graph_icon.png" alt="Analytics"></button>
   </div>
@@ -699,7 +699,7 @@
         e.preventDefault();
         e.stopPropagation();
         const id = e.target.getAttribute('data-id');
-        if (id) deleteDeposit(parseInt(id));
+        if (id) deleteDeposit(id);
       }
     });
   }
