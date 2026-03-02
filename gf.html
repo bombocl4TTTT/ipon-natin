@@ -157,10 +157,10 @@
     color: #fff;
     border: none;
     border-radius: 100px;
-    padding: 17px 24px;
+    padding: 12px 20px;
     font-family: 'Lato', sans-serif;
     font-weight: 400;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     cursor: pointer;
@@ -175,28 +175,6 @@
 
   .btn-primary:active { transform: scale(0.98); opacity: 0.88; }
 
-  .btn-secondary {
-    width: 100%;
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 16px 24px;
-    font-family: 'Lato', sans-serif;
-    font-weight: 300;
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    transition: border-color 0.2s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .btn-secondary:active { opacity: 0.7; }
 
   /* History */
   .section-head {
@@ -323,12 +301,12 @@
   }
 
   .amount-input {
-    flex: 1;
+    width: 60px;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 20px;
     font-family: 'Lato', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     background: var(--surface);
     color: var(--text);
   }
@@ -336,6 +314,10 @@
   .amount-input:focus {
     outline: none;
     border-color: var(--accent);
+  }
+
+  .amount-input-row .btn-primary {
+    flex: 1;
   }
 
   /* Milestone celebration */
@@ -390,6 +372,108 @@
     70% { transform: scale(1.05); }
     100% { transform: scale(1); }
   }
+
+  /* Header icon */
+  .header-icon {
+    position: absolute;
+    top: 48px;
+    right: 28px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+  }
+
+  .header-icon img {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Analytics modal */
+  .analytics-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    display: none;
+    align-items: flex-end;
+    z-index: 999;
+  }
+
+  .analytics-modal.show { display: flex; }
+
+  .analytics-sheet {
+    background: var(--surface);
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    padding: 32px 28px 40px;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .analytics-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .analytics-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--muted);
+  }
+
+  .analytics-section {
+    margin-bottom: 28px;
+  }
+
+  .analytics-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .analytics-content {
+    background: var(--bg);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .analytics-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 0.9rem;
+  }
+
+  .analytics-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
 </style>
 </head>
 <body>
@@ -399,6 +483,7 @@
     <div class="header-eyebrow">Ipon Tracker · Bebe's Page</div>
     <div class="header-title">Our little<br><em>savings.</em></div>
     <span class="header-switch" onclick="window.location='you.html'">Switch to Red's page →</span>
+    <button class="header-icon" onclick="toggleAnalytics()"><img src="graph_icon.png" alt="Analytics"></button>
   </div>
 </div>
 
@@ -426,9 +511,9 @@
 
 <div class="fade">
   <div class="amount-input-row">
-    <input type="number" class="amount-input" id="deposit-amt" placeholder="Amount" value="20" min="1">
-    <button class="btn-primary" onclick="deposit('gf')" style="width: auto;">
-      ✦ Save
+    <input type="number" class="amount-input" id="deposit-amt" placeholder="₱" value="20" min="1">
+    <button class="btn-primary" onclick="deposit('gf')">
+      ✦ Deposit today ✦
     </button>
   </div>
 </div>
@@ -444,6 +529,30 @@
 <a class="you-link" href="you.html">Go to Red's page ↗</a>
 
 <div class="toast" id="toast"></div>
+
+<div class="analytics-modal" id="analyticsModal">
+  <div class="analytics-sheet">
+    <div class="analytics-header">
+      <div class="analytics-title">Analytics</div>
+      <button class="analytics-close" onclick="toggleAnalytics()">✕</button>
+    </div>
+    
+    <div class="analytics-section">
+      <div class="analytics-label">Monthly Breakdown</div>
+      <div class="analytics-content" id="monthlyBreakdown"></div>
+    </div>
+
+    <div class="analytics-section">
+      <div class="analytics-label">Savings Rate</div>
+      <div class="analytics-content" id="savingsRate"></div>
+    </div>
+
+    <div class="analytics-section">
+      <div class="analytics-label">Contribution</div>
+      <div class="analytics-content" id="contribution"></div>
+    </div>
+  </div>
+</div>
 
 <script>
   const SUPABASE_URL = 'https://smgcsfzhdkiekvymicbi.supabase.co';
@@ -549,6 +658,7 @@
     document.getElementById('count').textContent = state.history.length + ' entries';
 
     checkMilestone(total);
+    updateAnalytics(state);
 
     const log = document.getElementById('log');
     if (!state.history.length) {
@@ -564,7 +674,7 @@
           <div class="log-who">${h.person === 'gf' ? 'Bebe' : 'Red'}</div>
           <div class="log-time">${date}</div>
           <div class="log-amt">+₱${h.amount}</div>
-          <button class="delete-btn" onclick="deleteDeposit(${h.id})">✕</button>
+          <button type="button" class="delete-btn" data-id="${h.id}">✕</button>
         </div>
       `;
     }).join('');
@@ -575,6 +685,104 @@
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function setupDeleteButtons() {
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('delete-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = e.target.getAttribute('data-id');
+        if (id) deleteDeposit(parseInt(id));
+      }
+    });
+  }
+
+  setupDeleteButtons();
+
+  function toggleAnalytics() {
+    document.getElementById('analyticsModal').classList.toggle('show');
+  }
+
+  function updateAnalytics(state) {
+    // Monthly breakdown
+    const months = {};
+    state.history.forEach(h => {
+      const monthKey = new Date(h.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      months[monthKey] = (months[monthKey] || 0) + h.amount;
+    });
+
+    let monthlyHTML = '';
+    Object.entries(months).reverse().forEach(([month, amount]) => {
+      monthlyHTML += `
+        <div class="analytics-row">
+          <span>${month}</span>
+          <span class="analytics-value">₱${amount.toLocaleString()}</span>
+        </div>
+      `;
+    });
+    document.getElementById('monthlyBreakdown').innerHTML = monthlyHTML || '<div style="padding: 8px; color: var(--muted);">No data</div>';
+
+    // Actual savings for today/week/month
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    let savedToday = 0;
+    let savedWeek = 0;
+    let savedMonth = 0;
+    let savedTodayByYou = 0;
+    let savedTodayByGf = 0;
+
+    state.history.forEach(h => {
+      const hDate = new Date(h.created_at);
+      const hDay = new Date(hDate.getFullYear(), hDate.getMonth(), hDate.getDate());
+      
+      if (hDay.getTime() === today.getTime()) {
+        savedToday += h.amount;
+        if (h.person === 'gf') savedTodayByGf += h.amount;
+        else savedTodayByYou += h.amount;
+      }
+      if (hDate >= weekAgo) savedWeek += h.amount;
+      if (hDate >= monthAgo) savedMonth += h.amount;
+    });
+
+    const missedToday = savedTodayByGf === 0 ? '<div style="color: #c4956a; font-size: 0.75rem; margin-top: 8px;">💭 You haven\'t saved today yet</div>' : '';
+
+    document.getElementById('savingsRate').innerHTML = `
+      <div class="analytics-row">
+        <span>Saved today</span>
+        <span class="analytics-value">₱${savedToday.toLocaleString()}</span>
+      </div>
+      <div class="analytics-row">
+        <span>Saved this week</span>
+        <span class="analytics-value">₱${savedWeek.toLocaleString()}</span>
+      </div>
+      <div class="analytics-row">
+        <span>Saved this month</span>
+        <span class="analytics-value">₱${savedMonth.toLocaleString()}</span>
+      </div>
+      ${missedToday}
+    `;
+
+    // Contribution percentage
+    const total = state.you.total + state.gf.total;
+    const youPercent = total > 0 ? ((state.you.total / total) * 100).toFixed(1) : 0;
+    const gfPercent = total > 0 ? ((state.gf.total / total) * 100).toFixed(1) : 0;
+
+    document.getElementById('contribution').innerHTML = `
+      <div class="analytics-row">
+        <span>Red</span>
+        <span class="analytics-value">${youPercent}%</span>
+      </div>
+      <div class="analytics-row">
+        <span>Bebe</span>
+        <span class="analytics-value">${gfPercent}%</span>
+      </div>
+    `;
   }
 </script>
 </body>

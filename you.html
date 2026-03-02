@@ -110,13 +110,6 @@
     letter-spacing: -0.02em;
   }
 
-  .total-goal {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-
 
 
   /* Split row */
@@ -165,9 +158,9 @@
     color: var(--bg);
     border: none;
     border-radius: 2px;
-    padding: 18px 24px;
+    padding: 14px 24px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     cursor: pointer;
@@ -180,12 +173,6 @@
   }
 
   .deposit-btn:active { opacity: 0.75; }
-
-  .deposit-btn-secondary {
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
 
   /* History */
   .section-label {
@@ -270,12 +257,12 @@
   }
 
   .amount-input {
-    flex: 1;
+    width: 60px;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 2px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     background: var(--surface);
     color: var(--text);
   }
@@ -283,6 +270,10 @@
   .amount-input:focus {
     outline: none;
     border-color: var(--text);
+  }
+
+  .amount-input-row .deposit-btn {
+    flex: 1;
   }
 
   /* Milestone celebration */
@@ -339,6 +330,109 @@
     100% { transform: scale(1); }
   }
 
+  /* Header icon */
+  .header-icon {
+    position: absolute;
+    top: 40px;
+    right: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+  }
+
+  .header-icon img {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Analytics modal */
+  .analytics-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    display: none;
+    align-items: flex-end;
+    z-index: 999;
+  }
+
+  .analytics-modal.show { display: flex; }
+
+  .analytics-sheet {
+    background: var(--surface);
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    padding: 28px 24px 40px;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .analytics-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .analytics-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--muted);
+  }
+
+  .analytics-section {
+    margin-bottom: 28px;
+  }
+
+  .analytics-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .analytics-content {
+    background: var(--tag);
+    border-radius: 2px;
+    padding: 12px;
+  }
+
+  .analytics-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 0.85rem;
+  }
+
+  .analytics-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
   /* Toast */
   .toast {
     position: fixed;
@@ -384,6 +478,7 @@
     <div class="header-label">Ipon Tracker · Red's Page</div>
     <div class="header-title">Daily<br>Savings.</div>
     <span class="header-link" onclick="window.location='gf.html'">Switch to Bebe's page →</span>
+    <button class="header-icon" onclick="toggleAnalytics()"><img src="graph_icon.png" alt="Analytics"></button>
   </div>
 </div>
 
@@ -413,9 +508,10 @@
 
 <div class="fade-in">
   <div class="amount-input-row">
-    <input type="number" class="amount-input" id="deposit-amt" placeholder="Amount" value="20" min="1">
-    <button class="deposit-btn" onclick="deposit('you')" style="width: auto; padding: 10px 20px;">
-      Save →
+    <input type="number" class="amount-input" id="deposit-amt" placeholder="₱" value="20" min="1">
+    <button class="deposit-btn" onclick="deposit('you')">
+      <span>+ ₱₱₱ — Save Today</span>
+      <span>→</span>
     </button>
   </div>
 </div>
@@ -431,6 +527,30 @@
 <a class="gf-link" href="gf.html">Go to Bebe's page ↗</a>
 
 <div class="toast" id="toast"></div>
+
+<div class="analytics-modal" id="analyticsModal">
+  <div class="analytics-sheet">
+    <div class="analytics-header">
+      <div class="analytics-title">Analytics</div>
+      <button class="analytics-close" onclick="toggleAnalytics()">✕</button>
+    </div>
+    
+    <div class="analytics-section">
+      <div class="analytics-label">Monthly Breakdown</div>
+      <div class="analytics-content" id="monthlyBreakdown"></div>
+    </div>
+
+    <div class="analytics-section">
+      <div class="analytics-label">Savings Rate</div>
+      <div class="analytics-content" id="savingsRate"></div>
+    </div>
+
+    <div class="analytics-section">
+      <div class="analytics-label">Contribution</div>
+      <div class="analytics-content" id="contribution"></div>
+    </div>
+  </div>
+</div>
 
 <script>
   const SUPABASE_URL = 'https://smgcsfzhdkiekvymicbi.supabase.co';
@@ -536,6 +656,7 @@
     document.getElementById('log-count').textContent = state.history.length + ' entries';
 
     checkMilestone(total);
+    updateAnalytics(state);
 
     const hist = document.getElementById('history');
     if (!state.history.length) {
@@ -550,7 +671,7 @@
           <div class="history-who ${h.person === 'you' ? 'me' : ''}">${h.person === 'you' ? 'Red' : 'Bebe'}</div>
           <div class="history-date">${date}</div>
           <div class="history-amt">+₱${h.amount}</div>
-          <button class="delete-btn" onclick="deleteDeposit(${h.id})">✕</button>
+          <button type="button" class="delete-btn" data-id="${h.id}">✕</button>
         </div>
       `;
     }).join('');
@@ -561,6 +682,104 @@
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function setupDeleteButtons() {
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('delete-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = e.target.getAttribute('data-id');
+        if (id) deleteDeposit(parseInt(id));
+      }
+    });
+  }
+
+  setupDeleteButtons();
+
+  function toggleAnalytics() {
+    document.getElementById('analyticsModal').classList.toggle('show');
+  }
+
+  function updateAnalytics(state) {
+    // Monthly breakdown
+    const months = {};
+    state.history.forEach(h => {
+      const monthKey = new Date(h.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      months[monthKey] = (months[monthKey] || 0) + h.amount;
+    });
+
+    let monthlyHTML = '';
+    Object.entries(months).reverse().forEach(([month, amount]) => {
+      monthlyHTML += `
+        <div class="analytics-row">
+          <span>${month}</span>
+          <span class="analytics-value">₱${amount.toLocaleString()}</span>
+        </div>
+      `;
+    });
+    document.getElementById('monthlyBreakdown').innerHTML = monthlyHTML || '<div style="padding: 8px; color: var(--muted);">No data</div>';
+
+    // Actual savings for today/week/month
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    let savedToday = 0;
+    let savedWeek = 0;
+    let savedMonth = 0;
+    let savedTodayByYou = 0;
+    let savedTodayByGf = 0;
+
+    state.history.forEach(h => {
+      const hDate = new Date(h.created_at);
+      const hDay = new Date(hDate.getFullYear(), hDate.getMonth(), hDate.getDate());
+      
+      if (hDay.getTime() === today.getTime()) {
+        savedToday += h.amount;
+        if (h.person === 'you') savedTodayByYou += h.amount;
+        else savedTodayByGf += h.amount;
+      }
+      if (hDate >= weekAgo) savedWeek += h.amount;
+      if (hDate >= monthAgo) savedMonth += h.amount;
+    });
+
+    const missedToday = savedTodayByYou === 0 ? '<div style="color: var(--accent); font-size: 0.75rem; margin-top: 8px;">💭 You haven\'t saved today yet</div>' : '';
+
+    document.getElementById('savingsRate').innerHTML = `
+      <div class="analytics-row">
+        <span>Saved today</span>
+        <span class="analytics-value">₱${savedToday.toLocaleString()}</span>
+      </div>
+      <div class="analytics-row">
+        <span>Saved this week</span>
+        <span class="analytics-value">₱${savedWeek.toLocaleString()}</span>
+      </div>
+      <div class="analytics-row">
+        <span>Saved this month</span>
+        <span class="analytics-value">₱${savedMonth.toLocaleString()}</span>
+      </div>
+      ${missedToday}
+    `;
+
+    // Contribution percentage
+    const total = state.you.total + state.gf.total;
+    const youPercent = total > 0 ? ((state.you.total / total) * 100).toFixed(1) : 0;
+    const gfPercent = total > 0 ? ((state.gf.total / total) * 100).toFixed(1) : 0;
+
+    document.getElementById('contribution').innerHTML = `
+      <div class="analytics-row">
+        <span>Red</span>
+        <span class="analytics-value">${youPercent}%</span>
+      </div>
+      <div class="analytics-row">
+        <span>Bebe</span>
+        <span class="analytics-value">${gfPercent}%</span>
+      </div>
+    `;
   }
 </script>
 </body>
