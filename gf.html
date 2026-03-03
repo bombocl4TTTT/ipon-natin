@@ -27,10 +27,24 @@
     color: var(--text);
     font-family: 'Lato', sans-serif;
     font-weight: 300;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+    padding: 0;
+    max-width: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-wrapper {
     padding: 48px 28px 60px;
     max-width: 400px;
     margin: 0 auto;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
   }
 
   .fade { opacity: 0; transform: translateY(10px); animation: up 0.55s ease forwards; }
@@ -186,13 +200,31 @@
     color: var(--muted);
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 12px;
   }
+
+  .see-all-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 0;
+  }
+
+  .see-all-btn:hover { color: var(--text); }
 
   .log {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 4px;
   }
 
   .log-item {
@@ -379,6 +411,53 @@
     100% { transform: scale(1); }
   }
 
+  /* All deposits modal */
+  .all-deposits-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    display: none;
+    align-items: flex-end;
+    z-index: 999;
+  }
+
+  .all-deposits-modal.show { display: flex; }
+
+  .all-deposits-sheet {
+    background: var(--surface);
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    padding: 32px 28px 40px;
+    animation: slideUp 0.3s ease;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .all-deposits-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .all-deposits-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .all-deposits-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--muted);
+  }
+
   /* Header icon */
   .header-icon {
     position: absolute;
@@ -483,6 +562,7 @@
 </style>
 </head>
 <body>
+<div class="page-wrapper">
 
 <div class="fade">
   <div class="header">
@@ -524,10 +604,10 @@
   </div>
 </div>
 
-<div class="fade" style="margin-top: 32px;">
+<div class="fade" style="margin-top: 32px; flex: 1; display: flex; flex-direction: column;">
   <div class="section-head">
     <span>Log</span>
-    <span id="count">0 entries</span>
+    <button class="see-all-btn" onclick="toggleAllDeposits()">See All</button>
   </div>
   <div class="log" id="log"></div>
 </div>
@@ -557,6 +637,18 @@
       <div class="analytics-label">Contribution</div>
       <div class="analytics-content" id="contribution"></div>
     </div>
+  </div>
+</div>
+
+</div><!-- Close page-wrapper -->
+
+<div class="all-deposits-modal" id="allDepositsModal">
+  <div class="all-deposits-sheet">
+    <div class="all-deposits-header">
+      <div class="all-deposits-title">All Deposits</div>
+      <button class="all-deposits-close" onclick="toggleAllDeposits()">✕</button>
+    </div>
+    <div class="log" id="allDepositsList"></div>
   </div>
 </div>
 
@@ -657,6 +749,13 @@
 
   loadAndRender();
 
+  // Real-time listener for deposits
+  db.channel('deposits-channel')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'deposits' }, (payload) => {
+      loadAndRender();
+    })
+    .subscribe();
+
   function render(state) {
     const total = state.you.total + state.gf.total;
 
@@ -667,18 +766,20 @@
     document.getElementById('gf-streak').textContent = state.gf.streak + ' day streak';
     document.getElementById('you-streak').textContent = state.you.streak + ' day streak';
 
-    document.getElementById('count').textContent = state.history.length + ' entries';
-
     checkMilestone(total);
     updateAnalytics(state);
 
     const log = document.getElementById('log');
+    const allDepositsList = document.getElementById('allDepositsList');
+    
     if (!state.history.length) {
-      log.innerHTML = '<div class="empty-log">No entries yet — start saving together.</div>';
+      const emptyMsg = '<div class="empty-log">No entries yet — start saving together.</div>';
+      log.innerHTML = emptyMsg;
+      allDepositsList.innerHTML = emptyMsg;
       return;
     }
 
-    log.innerHTML = state.history.map(h => {
+    const logHTML = state.history.map(h => {
       const date = new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       return `
         <div class="log-item">
@@ -690,6 +791,9 @@
         </div>
       `;
     }).join('');
+    
+    log.innerHTML = logHTML;
+    allDepositsList.innerHTML = logHTML;
   }
 
   function showToast(msg) {
@@ -714,6 +818,10 @@
 
   function toggleAnalytics() {
     document.getElementById('analyticsModal').classList.toggle('show');
+  }
+
+  function toggleAllDeposits() {
+    document.getElementById('allDepositsModal').classList.toggle('show');
   }
 
   function updateAnalytics(state) {
@@ -762,7 +870,7 @@
       if (hDate >= monthAgo) savedMonth += h.amount;
     });
 
-    const missedToday = savedTodayByGf === 0 ? '<div style="color: #c4956a; font-size: 0.75rem; margin-top: 8px;">💭 You haven\'t saved today yet</div>' : '';
+    const missedToday = savedTodayByGf === 0 ? '<div style="color: var(--accent); font-size: 0.75rem; margin-top: 8px;">💭 You haven\'t saved today yet</div>' : '';
 
     document.getElementById('savingsRate').innerHTML = `
       <div class="analytics-row">

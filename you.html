@@ -26,10 +26,24 @@
     color: var(--text);
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 300;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+    padding: 0;
+    max-width: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-wrapper {
     padding: 40px 24px 60px;
     max-width: 400px;
     margin: 0 auto;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Staggered load animation */
@@ -186,13 +200,31 @@
     margin-bottom: 12px;
     display: flex;
     justify-content: space-between;
+    align-items: center;
   }
+
+  .see-all-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 0;
+  }
+
+  .see-all-btn:hover { color: var(--text); }
 
   .history-list {
     display: flex;
     flex-direction: column;
     gap: 0;
     border-top: 1px solid var(--border);
+    max-height: 300px;
+    overflow-y: auto;
   }
 
   .history-row {
@@ -439,6 +471,53 @@
     color: var(--text);
   }
 
+  /* All deposits modal */
+  .all-deposits-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    display: none;
+    align-items: flex-end;
+    z-index: 999;
+  }
+
+  .all-deposits-modal.show { display: flex; }
+
+  .all-deposits-sheet {
+    background: var(--surface);
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    padding: 28px 24px 40px;
+    animation: slideUp 0.3s ease;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .all-deposits-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .all-deposits-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .all-deposits-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--muted);
+  }
+
   /* Toast */
   .toast {
     position: fixed;
@@ -478,6 +557,7 @@
 </style>
 </head>
 <body>
+<div class="page-wrapper">
 
 <div class="fade-in">
   <div class="header">
@@ -522,15 +602,17 @@
   </div>
 </div>
 
-<div class="fade-in" style="margin-top: 32px;">
+<div class="fade-in" style="margin-top: 32px; flex: 1; display: flex; flex-direction: column;">
   <div class="section-label">
     <span>Deposit Log</span>
-    <span id="log-count">0 entries</span>
+    <button class="see-all-btn" onclick="toggleAllDeposits()">See All</button>
   </div>
   <div class="history-list" id="history"></div>
 </div>
 
 <a class="gf-link" href="gf.html">Go to Bebe's page ↗</a>
+
+</div><!-- Close page-wrapper -->
 
 <div class="toast" id="toast"></div>
 
@@ -555,6 +637,16 @@
       <div class="analytics-label">Contribution</div>
       <div class="analytics-content" id="contribution"></div>
     </div>
+  </div>
+</div>
+
+<div class="all-deposits-modal" id="allDepositsModal">
+  <div class="all-deposits-sheet">
+    <div class="all-deposits-header">
+      <div class="all-deposits-title">All Deposits</div>
+      <button class="all-deposits-close" onclick="toggleAllDeposits()">✕</button>
+    </div>
+    <div class="history-list" id="allDepositsList"></div>
   </div>
 </div>
 
@@ -655,6 +747,13 @@
 
   loadAndRender();
 
+  // Real-time listener for deposits
+  db.channel('deposits-channel')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'deposits' }, (payload) => {
+      loadAndRender();
+    })
+    .subscribe();
+
   function render(state) {
     const total = state.you.total + state.gf.total;
 
@@ -665,18 +764,20 @@
     document.getElementById('you-streak').textContent = state.you.streak + ' day streak';
     document.getElementById('gf-streak').textContent = state.gf.streak + ' day streak';
 
-    document.getElementById('log-count').textContent = state.history.length + ' entries';
-
     checkMilestone(total);
     updateAnalytics(state);
 
     const hist = document.getElementById('history');
+    const allDepositsList = document.getElementById('allDepositsList');
+    
     if (!state.history.length) {
-      hist.innerHTML = '<div class="empty">No entries yet.</div>';
+      const emptyMsg = '<div class="empty">No entries yet.</div>';
+      hist.innerHTML = emptyMsg;
+      allDepositsList.innerHTML = emptyMsg;
       return;
     }
 
-    hist.innerHTML = state.history.map(h => {
+    const histHTML = state.history.map(h => {
       const date = new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       return `
         <div class="history-row">
@@ -687,6 +788,9 @@
         </div>
       `;
     }).join('');
+    
+    hist.innerHTML = histHTML;
+    allDepositsList.innerHTML = histHTML;
   }
 
   function showToast(msg) {
@@ -711,6 +815,10 @@
 
   function toggleAnalytics() {
     document.getElementById('analyticsModal').classList.toggle('show');
+  }
+
+  function toggleAllDeposits() {
+    document.getElementById('allDepositsModal').classList.toggle('show');
   }
 
   function updateAnalytics(state) {
