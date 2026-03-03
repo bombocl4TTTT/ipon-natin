@@ -27,13 +27,15 @@
     color: var(--text);
     font-family: 'Lato', sans-serif;
     font-weight: 300;
-    height: 100vh;
+    position: fixed;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     padding: 0;
-    max-width: 100%;
     margin: 0;
     display: flex;
     flex-direction: column;
+    touch-action: none;
   }
 
   .page-wrapper {
@@ -437,16 +439,30 @@
   }
 
   .all-deposits-header {
+    margin-bottom: 24px;
+  }
+
+  .all-deposits-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    gap: 12px;
+  }
+
+  .all-deposits-filters-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .all-deposits-filters {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .filter-btn {
@@ -470,13 +486,6 @@
 
   .filter-btn:hover {
     border-color: var(--accent);
-  }
-
-  .all-deposits-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: var(--text);
   }
 
   .all-deposits-close {
@@ -635,7 +644,7 @@
 
 <div class="fade" style="margin-top: 32px; flex: 1; display: flex; flex-direction: column;">
   <div class="section-head">
-    <span>Log</span>
+    <span>Deposit Log</span>
     <button class="see-all-btn" onclick="toggleAllDeposits()">See All</button>
   </div>
   <div class="log" id="log"></div>
@@ -674,13 +683,23 @@
 <div class="all-deposits-modal" id="allDepositsModal">
   <div class="all-deposits-sheet">
     <div class="all-deposits-header">
-      <div class="all-deposits-title">All Deposits</div>
-      <div class="all-deposits-filters">
-        <button class="filter-btn active" data-filter="all" onclick="filterDeposits('all')">All</button>
-        <button class="filter-btn" data-filter="gf" onclick="filterDeposits('gf')">Bebe</button>
-        <button class="filter-btn" data-filter="you" onclick="filterDeposits('you')">Red</button>
+      <div class="all-deposits-title">
+        All Deposits
+        <button class="all-deposits-close" onclick="toggleAllDeposits()">✕</button>
       </div>
-      <button class="all-deposits-close" onclick="toggleAllDeposits()">✕</button>
+      <div class="all-deposits-filters-group">
+        <div class="all-deposits-filters">
+          <button class="filter-btn active" data-filter="all" data-type="person" onclick="filterDeposits(this, 'person')">All</button>
+          <button class="filter-btn" data-filter="gf" data-type="person" onclick="filterDeposits(this, 'person')">Bebe</button>
+          <button class="filter-btn" data-filter="you" data-type="person" onclick="filterDeposits(this, 'person')">Red</button>
+        </div>
+        <div class="all-deposits-filters">
+          <button class="filter-btn active" data-filter="all" data-type="time" onclick="filterDeposits(this, 'time')">All</button>
+          <button class="filter-btn" data-filter="day" data-type="time" onclick="filterDeposits(this, 'time')">Day</button>
+          <button class="filter-btn" data-filter="week" data-type="time" onclick="filterDeposits(this, 'time')">Week</button>
+          <button class="filter-btn" data-filter="month" data-type="time" onclick="filterDeposits(this, 'time')">Month</button>
+        </div>
+      </div>
     </div>
     <div class="log" id="allDepositsList"></div>
   </div>
@@ -828,38 +847,56 @@
     
     log.innerHTML = logHTML;
     
-    // Filter for all deposits modal
-    let filteredHTML = logHTML;
-    if (currentDepositFilter === 'gf') {
-      const gfItems = state.history.filter(h => h.person === 'gf').map(h => {
-        const date = new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        return `
-          <div class="log-item">
-            <div class="log-dot ${h.person === 'gf' ? 'me' : ''}"></div>
-            <div class="log-who">${h.person === 'gf' ? 'Bebe' : 'Red'}</div>
-            <div class="log-time">${date}</div>
-            <div class="log-amt">+₱${h.amount}</div>
-            <button type="button" class="delete-btn" data-id="${h.id}">✕</button>
-          </div>
-        `;
-      }).join('');
-      filteredHTML = gfItems;
-    } else if (currentDepositFilter === 'you') {
-      const youItems = state.history.filter(h => h.person === 'you').map(h => {
-        const date = new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        return `
-          <div class="log-item">
-            <div class="log-dot ${h.person === 'gf' ? 'me' : ''}"></div>
-            <div class="log-who">${h.person === 'gf' ? 'Bebe' : 'Red'}</div>
-            <div class="log-time">${date}</div>
-            <div class="log-amt">+₱${h.amount}</div>
-            <button type="button" class="delete-btn" data-id="${h.id}">✕</button>
-          </div>
-        `;
-      }).join('');
-      filteredHTML = youItems;
+    // Filter for all deposits modal - apply both person and time filters
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    let filteredDeposits = state.history;
+
+    // Filter by person
+    if (currentDepositFilterPerson === 'gf') {
+      filteredDeposits = filteredDeposits.filter(h => h.person === 'gf');
+    } else if (currentDepositFilterPerson === 'you') {
+      filteredDeposits = filteredDeposits.filter(h => h.person === 'you');
     }
-    allDepositsList.innerHTML = filteredHTML;
+
+    // Filter by time
+    if (currentDepositFilterTime === 'day') {
+      filteredDeposits = filteredDeposits.filter(h => {
+        const hDate = new Date(h.created_at);
+        const hDay = new Date(hDate.getFullYear(), hDate.getMonth(), hDate.getDate());
+        return hDay.getTime() === today.getTime();
+      });
+    } else if (currentDepositFilterTime === 'week') {
+      filteredDeposits = filteredDeposits.filter(h => {
+        const hDate = new Date(h.created_at);
+        return hDate >= weekAgo;
+      });
+    } else if (currentDepositFilterTime === 'month') {
+      filteredDeposits = filteredDeposits.filter(h => {
+        const hDate = new Date(h.created_at);
+        return hDate >= monthAgo;
+      });
+    }
+
+    const filteredHTML = filteredDeposits.map(h => {
+      const date = new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="log-item">
+          <div class="log-dot ${h.person === 'gf' ? 'me' : ''}"></div>
+          <div class="log-who">${h.person === 'gf' ? 'Bebe' : 'Red'}</div>
+          <div class="log-time">${date}</div>
+          <div class="log-amt">+₱${h.amount}</div>
+          <button type="button" class="delete-btn" data-id="${h.id}">✕</button>
+        </div>
+      `;
+    }).join('');
+
+    allDepositsList.innerHTML = filteredHTML || '<div class="empty-log">No deposits match your filters.</div>';
   }
 
   function showToast(msg) {
@@ -887,22 +924,38 @@
     document.getElementById('analyticsModal').classList.toggle('show');
   }
 
-  let currentDepositFilter = 'all';
-
-  function filterDeposits(filter) {
-    currentDepositFilter = filter;
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.classList.remove('active');
-      if (btn.getAttribute('data-filter') === filter) {
-        btn.classList.add('active');
-      }
-    });
-    // Re-render with current state if available
-    const log = document.getElementById('log');
-    const allDepositsList = document.getElementById('allDepositsList');
-    if (allDepositsList.innerHTML) {
-      loadAndRender();
+  function toggleAllDeposits() {
+    const modal = document.getElementById('allDepositsModal');
+    modal.classList.toggle('show');
+    if (!modal.classList.contains('show')) {
+      currentDepositFilterPerson = 'all';
+      currentDepositFilterTime = 'all';
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-filter') === 'all') {
+          btn.classList.add('active');
+        }
+      });
     }
+  }
+
+  let currentDepositFilterPerson = 'all';
+  let currentDepositFilterTime = 'all';
+
+  function filterDeposits(btn, type) {
+    if (type === 'person') {
+      currentDepositFilterPerson = btn.getAttribute('data-filter');
+      document.querySelectorAll('.filter-btn[data-type="person"]').forEach(b => {
+        b.classList.remove('active');
+      });
+    } else if (type === 'time') {
+      currentDepositFilterTime = btn.getAttribute('data-filter');
+      document.querySelectorAll('.filter-btn[data-type="time"]').forEach(b => {
+        b.classList.remove('active');
+      });
+    }
+    btn.classList.add('active');
+    loadAndRender();
   }
 
   function setupModalCloseOnBackdrop() {
