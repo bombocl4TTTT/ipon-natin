@@ -669,11 +669,6 @@
     </div>
     
     <div class="analytics-section">
-      <div class="analytics-label">Monthly Breakdown</div>
-      <div class="analytics-content" id="monthlyBreakdown"></div>
-    </div>
-
-    <div class="analytics-section">
       <div class="analytics-label">Savings Rate</div>
       <div class="analytics-content" id="savingsRate"></div>
     </div>
@@ -746,12 +741,13 @@
     }
   }
 
-  let lastMilestone = 0;
+  let lastMilestone = parseInt(localStorage.getItem('lastMilestone')) || 0;
   function checkMilestone(total) {
     const milestones = [250, 500, 750, 1000, 2000, 3000, 5000, 7000, 8000, 10000];
     for (let m of milestones) {
       if (total >= m && lastMilestone < m) {
         lastMilestone = m;
+        localStorage.setItem('lastMilestone', lastMilestone);
         showMilestone(m);
         return;
       }
@@ -981,24 +977,6 @@
   }
 
   function updateAnalytics(state) {
-    // Monthly breakdown
-    const months = {};
-    state.history.forEach(h => {
-      const monthKey = new Date(h.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-      months[monthKey] = (months[monthKey] || 0) + h.amount;
-    });
-
-    let monthlyHTML = '';
-    Object.entries(months).reverse().forEach(([month, amount]) => {
-      monthlyHTML += `
-        <div class="analytics-row">
-          <span>${month}</span>
-          <span class="analytics-value">₱${amount.toLocaleString()}</span>
-        </div>
-      `;
-    });
-    document.getElementById('monthlyBreakdown').innerHTML = monthlyHTML || '<div style="padding: 8px; color: var(--muted);">No data</div>';
-
     // Actual savings for today/week/month
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1022,8 +1000,8 @@
         if (h.person === 'you') savedTodayByYou += h.amount;
         else savedTodayByGf += h.amount;
       }
-      if (hDate >= weekAgo) savedWeek += h.amount;
-      if (hDate >= monthAgo) savedMonth += h.amount;
+      if (hDay >= weekAgo) savedWeek += h.amount;
+      if (hDay >= monthAgo) savedMonth += h.amount;
     });
 
     const missedToday = savedTodayByYou === 0 ? '<div style="color: var(--accent); font-size: 0.75rem; margin-top: 8px;">💭 You haven\'t saved today yet</div>' : '';
