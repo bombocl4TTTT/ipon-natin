@@ -2,7 +2,7 @@
   "name": "Ipon — Savings Tracker",
   "short_name": "Ipon",
   "description": "A couple's savings tracker",
-  "start_url": "/you.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#f5f5f5",
   "theme_color": "#1a1a1a",
